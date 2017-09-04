@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <style type="text/css">
+        </style>
+</head>
+<body>
+
+        <div id="vizcontrainer">
+        <svg style="width:500px;height:500px;border:1px lightgray solid;" />
+        </div>
+
+        <script type="text/javascript">
+
+        //1.6.2 Hello world with circles
+        //1.6.3 A conversation with D3
+        d3.select("svg")
+          .append("line")
+          .attr("x1", 20)
+          .attr("y1", 20)
+          .attr("x2", 400)
+          .attr("y2", 400)
+          .style("stroke", "black")
+          .style("stroke-width", "2px");
+
+        d3.select("svg")
+          .append("circle")
+          .attr("r", 20)
+          .attr("cx", 20)
+          .attr("cy", 20)
+          .style("fill", "red");
+
+        d3.select("svg")
+          .append("text")
+          .attr("id", "a")              //id
+          .attr("x", 20)
+          .attr("y", 20)
+          .style("opacity", 0)          //transparency
+          .text("HELLO WORLD");
+
+        d3.select("svg")
+          .append("circle")
+          .attr("r", 100)
+          .attr("cx", 400)
+          .attr("cy", 400)
+          .style("fill", "lightblue");
+
+        d3.select("svg")
+          .append("text")
+          .attr("id", "b")
+          .attr("x", 400)
+          .attr("y", 400)
+          .style("opacity", 0)
+          .text("Uh, hi.");
+
+        //transition and delay
+        d3.select("#a")
+          .transition()
+          .delay(1000)
+          .style("opacity", 1);
+
+        d3.select("#b")
+          .transition()
+          .delay(3000)
+          .style("opacity", .75);
+
+        //duration
+        d3.selectAll("circle")
+          .transition()
+          .duration(2000)
+          .attr("cy", 200);
+
+        </script>
+</body>
+</html>
