@@ -94,16 +94,7 @@
                           .append("g")
                           .attr("class", "overallG")
                           .attr("transform", function (d,i) {return "translate(" + (i * 50) + ", 0)"})
-                          //deal with DOM elements bounding to data
-                          //show datapoint
-/*                          .each(function(d,i) {
-                                  console.log(d);
-                                  console.log(i);
-                                  console.log(this);
-                          })
-                          //show DOM element
-                          .node();
-*/
+
                         var teamG = d3.selectAll("g.overallG");
 
                         teamG.append("circle")
@@ -114,28 +105,70 @@
                              .attr("r", 40)
                              .transition()
                              .duration(500)
-                             .attr("r", 20)
-//                             .style("fill", "pink")
-//                             .style("stroke", "black")
-//                             .style("stroke-width", "1px");
+                             .attr("r", 20);
 
                         teamG.append("text")
                              .style("text-anchor", "middle")
                              .style("pointer-events", "none")
                              .attr("y", 30)
-//                             .style("font-size", "10px")
                              .text(function(d) {return d.team;});
 
-                        //3.3.1 insert images
-                        d3.selectAll("g.overallG")
-                          .insert("image", "text")
-                          .attr("xlink:href", function(d) {
-                                  return "images/" + d.team + ".png";
-                          })
-                          .attr("width", "27px")
-                          .attr("height", "12px")
-                          .attr("x", "-13.5")
-                          .attr("y", "-6");
+                        //3.3.3 pregenerated svg
+                        d3.html("resources/icon.svg", loadSVG);
+                        function loadSVG(svgData) {
+/*                                while(
+                                        !d3.select(svgData)
+                                           .selectAll("path")
+                                           .empty())
+                                           {
+                                                   d3.select("svg")
+                                                     .node()
+                                                     .appendChild(
+                                                             d3.select(svgData)
+                                                               .select("path")
+                                                               .node());
+
+                                           };
+*/
+/*                                d3.select(svgData)
+                                  .selectAll("path")
+                                  .each(function() {
+                                          d3.select("svg").node().appendChild(this);
+                                  });
+                                d3.selectAll("path")
+                                  .attr("transform", "translate(50,50)");
+*/
+                                d3.selectAll("g.overallG")
+                                  .each(function() {
+                                          var gParent = this;
+                                          d3.select(svgData)
+                                            .selectAll("path")
+                                            .each(function() {
+                                                    gParent.appendChild(this.cloneNode(true))
+                                            });
+                                  });
+
+                                recolorFootballs();
+                        };
+
+                        function recolorFootballs() {
+                                d3.selectAll("g.overallG")
+                                  .each(function(d) {
+                                          d3.select(this)
+                                            .selectAll("path")
+                                            .datum(d);
+                                  });
+
+                                var tenColorScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+                                d3.selectAll("path")
+                                  .style("fill", function(p) {
+                                        return tenColorScale(p.region);
+                                  })
+                                  .style("stroke", "black")
+                                  .style("stroke-width", "2px");
+
+                        };
 
                         //3.2 create buttons
                         var dataKeys = d3.keys(incomingData[0])
@@ -155,9 +188,7 @@
                                 var maxValue = d3.max(incomingData, function(d) {
                                                         return parseFloat(d[datapoint]);
                                                 });
-                                //discrete color scales
-//                                var tenColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-                                //use colorbrewer.js
+
                                 var colorQuantize = d3.scaleQuantile()
                                                       .domain([0,maxValue])
                                                       .range(colorbrewer.Reds[3]);
@@ -169,8 +200,6 @@
                                 d3.selectAll("g.overallG")
                                   .select("circle")
                                   .transition().duration(1000)
-                                  //discrete color scales
-//                                  .style("fill", function(p) { return tenColorScale(p.region); })
                                   .style("fill", function(p) {
                                           return colorQuantize(p[datapoint]);
                                   })
@@ -181,43 +210,6 @@
 
                         };
 
-                        //mouse on and out
-/*                        teamG.on("mouseover", highlightRegion);
-
-                        function highlightRegion(d) {
-                                d3.selectAll("g.overallG")
-                                  .select("circle")
-                                  .style("fill", function(p) {
-                                          return p.region == d.region ? "red" : "gray";
-                                  });
-                        };
-
-                        teamG.on("mouseout", function() {
-                                d3.selectAll("g.overallG")
-                                  .select("circle")
-                                  .style("fill", "pink");
-                        });
-*/
-
-
-/*                        function highlightRegion2(d,i) {
-                                var teamColor = d3.rgb("pink")
-
-                                d3.select(this)
-                                  .select("text")
-                                  .classed("highlight", true)
-                                  .attr("y", 10);
-
-                                d3.selectAll("g.overallG")
-                                  .select("circle")
-                                  .style("fill", function(p) {
-                                          return p.region == d.region ?
-                                          teamColor.darker(.75) : teamColor.brighter(.5)
-                                  })
-
-                                this.parentElement.appendChild(this);
-                        }
-*/
                         function highlightRegion2(d,i) {
 
                                 //manipulate colors
@@ -230,12 +222,6 @@
 
                                 d3.selectAll("g.overallG")
                                   .select("circle")
-//                                  .each(function(p,i) {
-//                                          return p.region == d.region ?
-//                                          d3.select(this).classed("active", true) :
-//                                          d3.select(this).classed("inactive", true);
-//                                  });
-                                  //manipulate colors
                                   .style("fill", function(p) {
                                           return p.region == d.region ?
                                           teamColor.darker(.75) :
@@ -249,8 +235,6 @@
                                   .select("circle")
                                   .attr("class", "")
                                   .style("fill", "pink")
-//                                  .classed("active", false)
-//                                  .classed("inactive", false)
                                   ;
 
                                 d3.selectAll("g.overallG")
