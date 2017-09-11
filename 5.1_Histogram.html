@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+                rect {
+                        fill: lightgray;
+                        stroke: black;
+                        stroke-width: 1px;
+                }
+
+                line {
+                        shape-rendering: crispEdges;
+                        stroke: #000000;
+                }
+                line.minor  {
+                        stroke: #777777;
+                        stroke-dasharray: 2,2;
+                }
+                path.domain {
+                        fill: none;
+                        stroke: black;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        d3.json("datasets/tweets.json", function(error, data) { histogram(data.tweets) });
+
+        function histogram(tweetsData) {
+
+                var xScale = d3.scaleLinear().domain([ 0, 5 ]).range([ 0, 500 ]);
+                var yScale = d3.scaleLinear().domain([ 0, 10 ]).range([ 400, 0 ]);
+                var xAxis = d3.axisBottom().scale(xScale).ticks(5);
+                var histoChart = d3.histogram();
+
+                histoChart.domain(xScale.domain())      //bins
+                          .value(function(d) { return d.favorites.length; });
+
+                histoData = histoChart(tweetsData);
+
+                d3.select("svg").selectAll("rect")
+                  .data(histoData).enter()
+                  .append("rect")
+                  .attr("x", function(d) { return xScale(d.x0); })
+                  .attr("y", function(d) { return yScale(d.length); })
+                  .attr("width", function(d) { return xScale(d.x1)-xScale(d.x0)-2; })
+                  .attr("height", function(d) { return 400 - yScale(d.length); })
+                  .on("click", retweets);
+
+                d3.select("svg").append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", "translate(0,400)")
+                  .call(xAxis);
+                d3.select("g.axis").selectAll("text").attr("dx", 50);
+
+                function retweets() {
+
+                        histoChart.value(function(d) {
+                                return d.retweets.length;
+                        });
+                        histoData = histoChart(tweetsData);
+
+                        d3.selectAll("rect").data(histoData)
+                          .transition().duration(500)
+                          .attr("x", function(d) { return xScale(d.x0); })
+                          .attr("y", function(d) { return yScale(d.length); })
+                          .attr("height", function(d) { return 400 - yScale(d.length); });
+                };
+
+        };
+
+        </script>
+</body>
+</html>
