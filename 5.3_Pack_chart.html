@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        d3.json("tweets.json", dataViz);
+
+        function dataViz(data) {
+
+                var nestedTweets = d3.nest()
+                                     .key(function (el) { return el.user; })
+                                     .entries(data.tweets);
+                //top-level parent array
+                var packableTweets = {id: "All Tweets", values: nestedTweets};
+                //color scale
+                var depthScale = d3.scaleOrdinal(d3.schemeCategory10);
+                //initial pack chart
+                var packChart = d3.pack();
+                packChart.size([500,500])
+                         .padding(5);
+                //children
+                var root = d3.hierarchy(packableTweets, function(d) { return d.values; })
+//                             .sum(function(d) { return 1; });
+                             //tweets with no retweets/favorites still displayed
+                             //node sized by value
+                             .sum(function(d) {return d.retweets ? d.retweets.length +
+                                                d.favorites.length + 1 : undefined; });
+
+                d3.select("svg")
+                  .selectAll("circle")
+                  .data(packChart(root).descendants())
+                  .enter()
+                  .append("circle")
+                  //modify radius of circle
+                  .attr("r", function(d) {return d.r;})
+                  .attr("cx", function(d) {return d.x;})
+                  .attr("cy", function(d) {return d.y;})
+                  .style("fill", function(d) {return depthScale(d.depth);})
+                  .style("stroke", "black")
+                  .style("stroke", "2px");
+
+        };
+
+        </script>
+</body>
+</html>
