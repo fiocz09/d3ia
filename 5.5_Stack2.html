@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        d3.csv("datasets/movies.csv", dataViz);
+
+        function dataViz(data) {
+
+                var xScale = d3.scaleLinear().domain([1, 10]).range([20, 440]);
+                var yScale = d3.scaleLinear().domain([0, 70]).range([480, 0]);
+                var heightScale = d3.scaleLinear().domain([0, 70]).range([0, 480]);
+
+                var movies = ["movie1", "movie2", "movie3", "movie4", "movie5", "movie6"];
+                var fillScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+                var stackLayout = d3.stack().keys(movies);
+
+                var xAxis = d3.axisBottom().scale(xScale).ticks(10).tickSize(480);
+                d3.select("svg").append("g").attr("id", "xAxisG").call(xAxis);
+                var yAxis = d3.axisRight().scale(yScale).ticks(8).tickSize(480);
+                d3.select("svg").append("g").attr("id", "yAxisG").call(yAxis);
+
+                d3.select("svg").selectAll("g.bar")
+                  .data(stackLayout(data))
+                  .enter().append("g")
+                  .attr("class", "bar")
+                  .each(function(d) {
+                          d3.select(this).selectAll("rect")
+                            .data(d)
+                            .enter()
+                            .append("rect")
+                            .attr("x", (p, q) => xScale(q) - 15)
+                            .attr("y", p => yScale(p[1]))
+                            .attr("height", p => heightScale(p[1]-p[0]))
+                            .attr("width", 40)
+                            .style("fill", fillScale(d.key));
+                  });
+
+        };
+
+        </script>
+</body>
+</html>

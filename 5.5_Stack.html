@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        d3.csv("datasets/movies.csv", dataViz);
+
+        function dataViz(data) {
+
+                var xScale = d3.scaleLinear().domain([0, 10]).range([40, 500]);
+                var yScale = d3.scaleLinear().domain([-50, 50]).range([500, 0]);
+                var movies = ["movie1", "movie2", "movie3", "movie4", "movie5", "movie6"];
+                var fillScale = d3.scaleOrdinal(d3.schemeCategory10);
+
+                var stackArea = d3.area()
+                                  .x((d,i) => xScale(i))
+                                  .y0(d => yScale(d[0]))
+                                  .y1(d => yScale(d[1]))
+                                  .curve(d3.curveBasis);
+
+                var stackLayout = d3.stack()
+                                    .offset(d3.stackOffsetSilhouette)
+                                    .order(d3.stackOrderInsideOut)
+                                    .keys(movies);
+
+                d3.select("svg").selectAll("path")
+                  .data(stackLayout(data))
+                  .enter().append("path")
+                  .style("fill", d => fillScale(d.key))
+                  .attr("d", d => stackArea(d));
+
+        };
+
+        </script>
+</body>
+</html>
