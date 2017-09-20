@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <link type="text/css" href="css/networks.css" rel="stylesheet"/>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        //load 2 datasets into synchronous format
+        d3.queue()
+          .defer(d3.csv, "datasets/nodelist.csv")
+          .defer(d3.csv, "datasets/edgelist.csv")
+          .await(function(error, file1, file2) {
+                  createArcDiagram(file1, file2);
+          });
+
+          function createArcDiagram(nodes,edges) {
+                  var nodeHash = {};
+                  for (x in nodes) {
+                          nodeHash[nodes[x].id] = nodes[x];
+                          nodes[x].x = parseInt(x) * 40;
+                  };
+                  for (x in edges) {
+                          edges[x].weight = parseInt(edges[x].weight);
+                          edges[x].source = nodeHash[edges[x].source];
+                          edges[x].target = nodeHash[edges[x].target];
+                  };
+
+                  var linkScale = d3.scaleLinear()
+                                    .domain(d3.extent(edges, d => d.weight))
+                                    .range([5,10]);
+                  var arcG = d3.select("svg").append("g").attr("id", "arcG")
+                               .attr("transform", "translate(50,250)");
+
+                  arcG.selectAll("path")
+                      .data(edges)
+                      .enter()
+                      .append("path")
+                      .attr("class", "arc")
+                      .style("stroke-width", d => d.weight * 2)
+                      .style("opacity", .25)
+                      //draw link use arc function
+                      .attr("d", arc);
+
+                  arcG.selectAll("circle")
+                      .data(nodes)
+                      .enter()
+                      .append("circle")
+                      .attr("class", "node")
+                      .attr("r", 10)
+                      .attr("cx", d => d.x);
+
+                  function arc(d,i) {
+                          var draw = d3.line().curve(d3.curveBasis);
+                          var midX = (d.source.x + d.target.x) / 2;
+                          var midY = (d.source.x - d.target.x) * 2;
+                          return draw([[d.source.x,0],[midX,midY],[d.target.x,0]]);
+                  };
+
+                  d3.selectAll("circle").on("mouseover", nodeOver);
+                  d3.selectAll("circle").on("mouseout", nodeOut);
+                  d3.selectAll("path").on("mouseover", edgeOver);
+                  d3.selectAll("path").on("mouseout", edgeOut);
+
+                  function nodeOver(d,i) {
+                          d3.selectAll("circle")
+                            //.classed("active", p => p == d ? true : false);
+                            .style("fill", p => p == d ? "red" : "lightgray");
+                          d3.selectAll("path")
+                            .classed("active", p => p.source == d || p.target == d ? true : false);
+                  };
+                  function nodeOut(d,i) {
+                          d3.selectAll("circle").style("fill", "lightgray");
+                          d3.selectAll("path").attr("class", "arc");
+                  };
+                  //note: when (1) mouse move out edge, if (2) mouse over circle set as classed active
+                  //      node will never be red again, cause .style is run prior to .classed.
+                  //      So we can change nodeOver function a little bit.
+                  function edgeOver(d) {
+                          d3.selectAll("circle")
+                            .style("fill", p => p == d.source ? "blue" : p == d.target ? "green" : "lightgray");
+                          d3.selectAll("path")
+                            .classed("active", p => p == d ? true : false);
+                  };
+                  function edgeOut(d) {
+                          d3.selectAll("circle").style("fill", "lightgray");
+                          d3.selectAll("path").attr("class", "arc");
+                  };
+        };
+
+        </script>
+</body>
+</html>

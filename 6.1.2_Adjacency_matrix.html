@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript">
+        </script>
+        <link type="text/css" href="css/networks.css" rel="stylesheet"/>
+        <style type="text/css">
+                svg {
+                        height: 500px;
+                        width: 500px;
+                        border: 1px solid gray;
+                }
+        </style>
+</head>
+<body>
+
+        <div>
+        <svg></svg>
+        </div>
+
+        <script type="text/javascript">
+
+        //load 2 datasets into synchronous format
+        d3.queue()
+          .defer(d3.csv, "datasets/nodelist.csv")
+          .defer(d3.csv, "datasets/edgelist.csv")
+          .await(function(error, file1, file2) {
+                  createAdjacencyMatrix(file1, file2);
+          });
+
+        function createAdjacencyMatrix(nodes,edges) {
+                var edgeHash = {};
+                for (x in edges) {
+                        var id = edges[x].source + "-" + edges[x].target;
+                        edgeHash[id] = edges[x];
+                };
+                var matrix = [];
+                //create adges
+                nodes.forEach((source, a) => {
+                        nodes.forEach((target, b) => {
+                                //set x,y coordinates
+                                var grid = {id: nodes[a].id + "-" + nodes[b].id,
+                                            x: b, y: a,
+                                            weight: 0};
+                                //give edge a weight
+                                if (edgeHash[grid.id]) { grid.weight = edgeHash[grid.id].weight; };
+                                matrix.push(grid);
+                        });
+                });
+
+                d3.select("svg")
+                  .append("g")
+                  .attr("transform", "translate(50,50)")
+                  .attr("id", "adjacencyG")
+                  .selectAll("rect")
+                  .data(matrix)
+                  .enter()
+                  .append("rect")
+                  .attr("class", "grid")
+                  .attr("width", 25)
+                  .attr("height", 25)
+                  .attr("x", d => d.x * 25)
+                  .attr("y", d => d.y * 25)
+                  .style("fill-opacity", d => d.weight * .2);
+
+                var scaleSize = nodes.length * 25;
+                var nameScale = d3.scaleBand()
+                                .domain(nodes.map(function (el) {return el.id}))
+                                .range([0,scaleSize]);
+                var xAxis = d3.axisTop().scale(nameScale).tickSize(4);
+                var yAxis = d3.axisLeft().scale(nameScale).tickSize(4);
+
+                d3.select("#adjacencyG").append("g").call(yAxis);
+                d3.select("#adjacencyG").append("g").call(xAxis)
+                  .selectAll("text").style("text-anchor", "end")
+                  .attr("transform", "translate(-10,-10) rotate(90)");
+
+                d3.selectAll("rect.grid").on("mouseover", gridOver);
+                d3.selectAll("rect.grid").on("mouseout", gridOut);
+
+                function gridOver(d,i) {
+                        d3.selectAll("rect").style("stroke-width", p => p.x == d.x || p.y == d.y ? "3px" : "1px");
+                };
+                function gridOut() {
+                        d3.selectAll("rect").style("stroke-width", "1px");
+                }
+
+        };
+
+
+        </script>
+</body>
+</html>
