@@ -26,15 +26,14 @@
                   createMap(file1, file2);
           });
 
-        //geoMollweide
+        //geoOrthographic
         function createMap(countries, cities) {
-                var projection = d3.geoMollweide()
-                                   .scale(120)
-                                   .translate([250,250]);
+                var projection = d3.geoOrthographic()
+                                   .scale(200)
+                                   .translate([250, 250])
+                                   .clipAngle(90);
                 var geoPath = d3.geoPath().projection(projection);
-
-                var featureSize = d3.extent(countries.features,
-                                            d => geoPath.area(d));
+                var featureSize = d3.extent(countries.features, d => geoPath.area(d));
                 var countryColor = d3.scaleQuantize()
                                      .domain(featureSize)
                                      .range(colorbrewer.Reds[7]);
@@ -44,7 +43,8 @@
                   .append("path")
                   .attr("d", geoPath)
                   .attr("class", "countries")
-                  .style("fill", d => countryColor(geoPath.area(d)));
+                  //.style("fill", d => countryColor(geoPath.area(d)))
+                  ;
 
                 d3.select("svg").selectAll("circle").data(cities)
                   .enter()
@@ -53,6 +53,50 @@
                   .attr("r", 3)
                   .attr("cx", d => projection([d.x,d.y])[0])
                   .attr("cy", d => projection([d.x,d.y])[1]);
+
+                var mapZoom = d3.zoom().on("zoom", zoomed);
+                var zoomSettings = d3.zoomIdentity
+                                     .translate(0, 0)
+                                     .scale(200);
+                var rotateScale = d3.scaleLinear()
+                                    .domain([-500, 0, 500])
+                                    .range([-180, 0, 180]);
+
+                d3.select("svg")
+                  .call(mapZoom)
+                  .call(mapZoom.transform, zoomSettings);
+
+                function zoomed() {
+                        var e = d3.event;
+                        var currentRotate = rotateScale(e.transform.x) % 360;
+                        projection
+                        .rotate([currentRotate, 0])
+                        .scale(e.transform.k);
+                        d3.selectAll("path.graticule").attr("d", geoPath);
+                        d3.selectAll("path.countries").attr("d", geoPath)
+                          .style("fill", d => countryColor(geoPath.area(d)))
+                          .style("stroke", d => d3.rgb(countryColor(geoPath.area(d))).darker());
+                        d3.selectAll("circle.cities")
+                          .each(function (d, i) {
+                                  var projectedPoint = projection([d.x,d.y]);
+                                  var x = parseInt(d.x);
+                                  var display = x + currentRotate < 90 && x + currentRotate > -90
+                                                || (x + currentRotate < -270 && x + currentRotate > -450)
+                                                || (x + currentRotate > 270 && x + currentRotate < 450)
+                                                ? "block" : "none";
+                                  d3.select(this)
+                                    .attr("cx", projectedPoint[0])
+                                    .attr("cy", projectedPoint[1])
+                                    .style("display", display);
+                        });
+                };
+
+                //re-color
+                var featureData = d3.selectAll("path.countries").data();
+                var realFeatureSize = d3.extent(featureData, d =>d3.geoArea(d));
+                var newFeatureColor = d3.scaleQuantize().domain(realFeatureSize).range(colorbrewer.Reds[7]);
+                d3.selectAll("path.countries")
+                  .style("fill", d =>newFeatureColor(d3.geoArea(d)));
 
                 //add a graticule
                 var graticule = d3.geoGraticule();
@@ -70,26 +114,6 @@
                   .style("fill", "none")
                   .style("stroke", "black")
                   .style("stroke-width", "1px");
-
-                //zoom and pan
-                var mapZoom = d3.zoom().on("zoom", zoomed);
-
-                var zoomSettings = d3.zoomIdentity
-                                     .translate(250, 250)
-                                     .scale(120);
-
-                d3.select("svg").call(mapZoom).call(mapZoom.transform, zoomSettings);
-
-                function zoomed() {
-                        var e = d3.event;
-                        projection.translate([e.transform.x, e.transform.y])
-                                  .scale(e.transform.k);
-                        d3.selectAll("path.graticule").attr("d", geoPath);
-                        d3.selectAll("path.countries").attr("d", geoPath);
-                        d3.selectAll("circle.cities")
-                          .attr("cx", d => projection([d.x,d.y])[0])
-                          .attr("cy", d => projection([d.x,d.y])[1]);
-                };
 
                 //zoom button
                 d3.select("#controls").append("button").
