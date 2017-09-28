@@ -1,0 +1,96 @@
+<!doctype html>
+
+<html>
+<head>
+        <script src="d3.js" type="text/Javascript"></script>
+        <link type="text/css" href="css/ch8.css" rel="stylesheet"></link>
+</head>
+<body>
+        <div id="traditional"></div>
+
+        <script type="text/javascript">
+
+        d3.json("datasets/tweets.json", function(error,data) {
+                createSpreadsheet(data.tweets);
+        });
+
+        function createSpreadsheet(incData) {
+                var keyValues = d3.keys(incData[0]);
+                d3.select("#traditional")
+                  .append("div")
+                  .attr("class", "table");
+                d3.select("div.table")
+                  .append("div")
+                  .attr("class", "head")
+                  .selectAll("div.data")
+                  .data(keyValues)
+                  .enter()
+                  .append("div")
+                  .attr("class", "data")
+                  .html(d => d)
+                  .style("left", (d,i) => (i * 100) + "px");
+                d3.select("div.table")
+                  .selectAll("div.datarow")
+                  .data(incData, d => d.content)
+                  .enter()
+                  .append("div")
+                  .attr("class", "datarow")
+                  .style("top", (d,i) => (40 + (i * 40)) + "px");
+                d3.selectAll("div.datarow")
+                  .selectAll("div.data")
+                  .data(d => d3.entries(d))
+                  .enter()
+                  .append("div")
+                  .attr("class", "data")
+                  .html(d => d.value)
+                  .style("left", (d,i,j) => (i * 100) + "px");
+
+                //row sort
+                d3.select("#traditional").insert("button", ".table")
+                  .on("click", sortSheet).html("sort rows");
+                d3.select("#traditional").insert("button", ".table")
+                  .on("click", restoreSheet).html("restore rows");
+                function sortSheet() {
+                        var dataset = d3.selectAll("div.datarow").data();
+                        dataset.sort(function(a,b) {
+                                var a = new Date(a.timestamp);
+                                var b = new Date(b.timestamp);
+                                return a>b ? 1 : (a<b ? -1 : 0);
+                        });
+                        d3.selectAll("div.datarow")
+                          .data(dataset, d => d.content)
+                          .transition()
+                          .duration(2000)
+                          .style("top", (d,i) => (40 + (i * 40)) + "px");
+                };
+                function restoreSheet() {
+                        d3.selectAll("div.datarow")
+                        .transition()
+                        .duration(2000)
+                        .style("top", (d,i) => (40 + (i * 40)) + "px");
+                };
+
+                //column sort
+                d3.select("#traditional").insert("button", ".table")
+                  .on("click", sortColumns).html("sort columns");
+                d3.select("#traditional").insert("button", ".table")
+                  .on("click", restoreColumns).html("restore columns");
+                function sortColumns() {
+                        d3.selectAll("div.datarow")
+                          .selectAll("div.data")
+                          .transition()
+                          .duration(2000)
+                          .style("left", (d,i,j) => (Math.abs(i - 4) * 100) + "px");
+                };
+                function restoreColumns() {
+                        d3.selectAll("div.datarow")
+                          .selectAll("div.data")
+                          .transition()
+                          .duration(2000)
+                          .style("left", (d,i,j) => (i * 100) + "px");
+                };
+        };
+
+        </script>
+</body>
+</html>
